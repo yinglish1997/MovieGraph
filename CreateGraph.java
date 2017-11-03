@@ -1,44 +1,23 @@
+package graph;
 
-
-import org.neo4j.graphdb.Relationship;
-import org.neo4j.graphdb.ResourceIterator;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
-
-import org.neo4j.graphdb.Direction;
-import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.RelationshipType;
-import org.neo4j.graphdb.Transaction;
-import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 
-
-
-
-
-
+import graph.MovieGraph;
+import graph.MovieGraph.MyRelationshipTypes;
 
 
 
 public class CreateGraph {
-	
-	public static enum MyRelationshipTypes implements RelationshipType{
-		MADED_BY, THEME_IS, CONTENCE_IS, PLAYED_BY,
-		COMPANY_IS, DIRECTED_BY, WOROTE_BY, ROLE_IS, ACTOR_BY
-	}
 
 	/**
 	 * 图形的构造方法：在本类中获取所有的属性，并把属性作为参数构造结点，创建关系
@@ -178,8 +157,9 @@ public class CreateGraph {
 	public CreateGraph(String dbPath, String filePath) throws IOException{
 		File file = new File(dbPath);
 		try{
-//			if(!file.exists())
-//				file.createNewFile();
+			if(file.exists()){
+				//把原代码改了一下，若已有数据库则不再建库，因此出现内存不够现象
+			}else{
 				//dbPath：数据库位置　filePath: txt文件的位置
 				this.movieGraph = new MovieGraph(dbPath);//数据库路径dbPath用于创建数据库
 				//init()函数初始化所有字段
@@ -210,9 +190,9 @@ public class CreateGraph {
 				if((companyName.size() == futureRepresent.size()) && (futureRepresent.size() == pastRepresent.size())){
 					for(int i = 0; i < cnameArray.length; i ++){				
 						Node company= this.movieGraph.companyNode(cnameArray[i],  cfutureRepresentArray[i].split(" "),cpastRepresentArray[i].split(" "));
-						//System.out.println("company  " + i + ":  "+ cnameArray[i]);
-						//movie.buildOtherRel(movie.manufacture, company, MyRelationshipTypes.COMPANY_IS);
-						//System.out.println("build a relation from manufacture to a company" + i);
+//						System.out.println("company  " + i + ":  "+ cnameArray[i]);
+						this.movieGraph.buildOtherRel(this.movieGraph.manufacture, company, MyRelationshipTypes.COMPANY_IS);
+//						System.out.println("build a relation from manufacture to a company" + i);
 					}
 				}else{
 					System.out.println("wrong in company");
@@ -226,14 +206,14 @@ public class CreateGraph {
 				if((dname.size() == directorImgurl.size()) && (directorImgurl.size() == drepresent.size())){
 					for(int i = 0; i < dnameArray.length; i ++){				
 						Node director = this.movieGraph.directorNode(dnameArray[i], dimgArray[i], drateArray[i], drepresentArray[i].split(" "));
-						//System.out.println("director  " + i + ":  " + dnameArray[i]);
-						//movie.buildOtherRel(movie.manufacture, director, MyRelationshipTypes.DIRECTED_BY);
-						//System.out.println("build a relation from manufacture to a director " + i);
+//						System.out.println("director  " + i + ":  " + dnameArray[i]);
+						this.movieGraph.buildOtherRel(this.movieGraph.manufacture, director, MyRelationshipTypes.DIRECTED_BY);
+//						System.out.println("build a relation from manufacture to a director " + i);
 					}
 				}else{
 					System.out.println("wrong in director");
 				}
-				//System.out.println("\n");
+//				System.out.println("\n");
 
 				//scriptWriter
 				String[] snameArray = changeEmptyArray((String[]) scriptwriteName.toArray(new String[scriptwriteName.size()]));
@@ -241,9 +221,9 @@ public class CreateGraph {
 				if((scriptwriteName.size() == sRepresent.size())){
 					for(int i = 0; i < snameArray.length; i ++){				
 						Node scriptwriter = this.movieGraph.scriptwriterNode(snameArray[i], sRepresentArray[i].split(" "));
-						//System.out.println("scriptWriter " + i + ":  " + snameArray[i]);
-						//movie.buildOtherRel(movie.manufacture, scriptWriter, MyRelationshipTypes.WOROTE_BY);
-						//System.out.println("build a relation from manufacture to a scriptWriter " + i);
+//						System.out.println("scriptWriter " + i + ":  " + snameArray[i]);
+						this.movieGraph.buildOtherRel(this.movieGraph.manufacture, scriptwriter, MyRelationshipTypes.WOROTE_BY);
+//						System.out.println("build a relation from manufacture to a scriptWriter " + i);
 					}
 				}else{
 					System.out.println("wrong in scriptwriter");
@@ -265,9 +245,9 @@ public class CreateGraph {
 					for(int i = 0; (i < rnameArray.length ) && (i < rActorArray.length); i ++){				
 						Node actorNode = this.movieGraph.actorNode(rActorArray[i], aNationArray[i], aBirthdayArray[i], aimgArray[i], aPupularArray[i], aRepresentArray[i].split(" "));				
 						Node role = this.movieGraph.roleNode(rnameArray[i], rimgArray[i], rIntroductionArray[i],rActorArray[i]);
-						//System.out.println(" role  " + i + ":  " + rnameArray[i]);				
-						//movie.buildOtherRel(movie.roleList, role, MyRelationshipTypes.ROLE_IS);
-						//System.out.println("build a relation from roleList to a role " + i);
+//						System.out.println(" role  " + i + ":  " + rnameArray[i]);				
+						this.movieGraph.buildOtherRel(this.movieGraph.roleList, role, MyRelationshipTypes.ROLE_IS);
+//						System.out.println("build a relation from roleList to a role " + i);
 					    
 						this.movieGraph.buildOtherRel(role, actorNode, MyRelationshipTypes.ACTOR_BY);
 					    //System.out.println("create relationship from the above role node to actor");
@@ -276,7 +256,7 @@ public class CreateGraph {
 					System.out.println("wrong in role");
 				}
 				this.movieGraph.graphDB.shutdown();//关掉数据库避免报错memoryError
-			//}
+			}
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -340,33 +320,31 @@ public class CreateGraph {
 	}
 
 
-	public static void createAllGraphs(String[] nameList) throws IOException{
-		//类构造器
-		String txtForthPath = "/home/yingying/下载/"; //文件路径前缀
-		String dbForthPath = "/home/yingying/下载/neo4jMovieGraph/";//对应数据库路径前缀
-		
-		for(int i = 0 ; i < nameList.length; i ++){
-			String txtPath =txtForthPath + nameList[i]+ "/" + nameList[i]+ ".txt" ;// 该部电影对应的真正的文件路径
-			String dbPath = dbForthPath +nameList[i];//该部电影对应的真正的数据库路径
-			CreateGraph test = new CreateGraph(dbPath, txtPath);	
-		}
-	}
+//	public static void createAllGraphs() throws IOException{
+//		//类构造器
+//		String txtForthPath = "/home/yingying/下载/MovieList/"; //文件路径前缀
+//		String dbForthPath = "/home/yingying/下载/movieDB/";//对应数据库路径前缀
+//		
+//		for(int i = 0 ; i < nameList.length; i ++){
+//			String txtPath =txtForthPath + nameList[i]+ "/" + nameList[i]+ ".txt" ;// 该部电影对应的真正的文件路径
+//			String dbPath = dbForthPath +nameList[i];//该部电影对应的真正的数据库路径
+//			CreateGraph test = new CreateGraph(dbPath, txtPath);	
+//		}
+//	}
 	
 	public static void main(String[] args) throws IOException{
-		System.out.println("ok");
-//		File file = new File("/home/yingying/下载/挑战杯/MovieList");
-//		File[] fileList = file.listFiles();
-//		int x = 0;
-//		for(; x <fileList.length; x ++){
-//			String txtPath = fileList[x].getAbsolutePath();			
-//			String[] getName = txtPath.split("/");
-//			String dbPath = "/home/yingying/下载/neo4jMovieGraph/" + getName[getName.length - 1];
-//			//System.out.println(txtPath + "      " + dbPath);
-//			CreateGraph graph = new CreateGraph(dbPath, txtPath);
-//		}
-		CreateGraph graph = new CreateGraph("/home/yingying/桌面/movie/fiveMovieNeo4j/银河护卫队2", "/home/yingying/桌面/movie/5部电影txt/银河护卫队2.txt");
+		File file = new File("/home/yingying/下载/MovieList/");
+		File[] fileList = file.listFiles();
+		System.out.println(fileList.length);
+		int x = 0;
+		for(; x <fileList.length; x ++){
+			String txtPath = fileList[x].getAbsolutePath();		
+			System.out.println(txtPath);
+			String[] getName = txtPath.split("/");
+			String dbPath = "/home/yingying/下载/movieDB/" + getName[getName.length - 1];
+			//System.out.println(txtPath + "      " + dbPath);
+			CreateGraph graph = new CreateGraph(dbPath, txtPath);
+			System.out.println("ok");
+		}
 	}
 }
-
-
-
