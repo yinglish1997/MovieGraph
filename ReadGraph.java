@@ -1,8 +1,9 @@
-package Graph;
+package graph;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
@@ -10,8 +11,18 @@ import org.neo4j.graphdb.ResourceIterator;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 
-
-import Graph.MovieGraph.Labels;
+import graph.MovieGraph;
+import graph.ReadGraph;
+import graph.MovieGraph.Labels;
+import graph.ReadGraph.Actor;
+import graph.ReadGraph.Company;
+import graph.ReadGraph.Contence;
+import graph.ReadGraph.Director;
+import graph.ReadGraph.Introduction;
+import graph.ReadGraph.MainTheme;
+import graph.ReadGraph.Manufacture;
+import graph.ReadGraph.Role;
+import graph.ReadGraph.Scriptwriter;
 
 public class ReadGraph {
 
@@ -151,7 +162,7 @@ public class ReadGraph {
 					 System.out.println("wrong to find the company  node");
 				 }
 				 String tempcname = (String) company.getProperty("cname");
-				 if(!cnameArrayList.contains(tempcname)){//当不重复的时候
+				 if(!cnameArrayList.contains(tempcname)){//当不重复的时候(发现通过标签取出的结点有重复现象)
 					 cnameArrayList.add((String) company.getProperty("cname"));
 					 cname = (String) company.getProperty("cname");
 					 cfReArrayList = (String[]) company.getProperty("futureRepresent");
@@ -557,9 +568,12 @@ public class ReadGraph {
  }
  
 	public static void main(String[] args){
-		ReadGraph test = new ReadGraph("/home/yingying/下载/neo4jMovieGraph/但丁密码");
-		for(Company com: test.maker.companies){
-			com.printCompany();
+		ReadGraph test = new ReadGraph("/home/yingying/下载/movieDB/一路向前");
+		for(Role rol: test.role){
+			rol.printRole();
 		}
+//		for(Company com: test.maker.companies){
+//			com.printCompany();
+//		}
 	}
 }
