@@ -1,12 +1,13 @@
-package Graph;
+package graph;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
-import learnNeo.Movie.MyRelationshipTypes;
 
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
@@ -20,7 +21,8 @@ import org.neo4j.graphdb.traversal.TraversalDescription;
 import org.neo4j.graphdb.traversal.Traverser;
 
 
-import Graph.MovieGraph.Labels;
+import graph.MovieGraph.Labels;
+import graph.MovieGraph.MyRelationshipTypes;
 
 public class searchGraph {
 	//莱文斯坦距离
@@ -63,6 +65,8 @@ public class searchGraph {
 		this.mapProperty.put("受欢迎程度", "popular");
 		this.mapProperty.put("国籍", "nation");
 		this.mapProperty.put("出生日期", "birthday");
+		
+		this.mapProperty.put("演员名字", "actor");
 		
 		this.mapProperty.put("出品公司列表", "companyList");
 		this.mapProperty.put("导演列表", "director");
@@ -126,10 +130,10 @@ public class searchGraph {
 		nextNode = findNodeByLabel(Labels.ROLE);
 		for(Node node: nextNode){
 				if(node.getProperty("name").equals(wordList.get(i))){
-				//System.out.println(node.getProperty("name"));
+//						System.out.println(node.getProperty("name") + " is equal to " + wordList.get(i));
 						nextNode.clear();
 						nextNode.add(node);
-				//涉及到具体某一个角色的问题与两种，第一种，问该角色简介，直接回去迭代
+				//涉及到具体某一个角色的问题与两种，第一种，问该角色简介，直接返回该节点即可
 						//第二种，后面还有问到其演员
 						if(wordList.get(i + 1).equals("演员")){
 								Iterator<Relationship> relativeActor = node.getRelationships(MyRelationshipTypes.ACTOR_BY).iterator();
@@ -143,7 +147,7 @@ public class searchGraph {
 													}
 												}
 											}		
-										}							
+										}
 									}
 		list.add(nextNode);
 		list.add(i);
@@ -166,7 +170,14 @@ public class searchGraph {
 		}
 
 	}
-	
+	public void printNodeList(ArrayList<Node> nodeList){
+		for(Node n: nodeList){
+			Set<Entry<String, Object>> proSet = n.getAllProperties().entrySet();
+			for(Entry<String, Object> en: proSet){
+				System.out.println(en.getKey() + ": " + en.getValue());
+			}
+		}
+	}
 	public ArrayList<Object> searchAnswer(ArrayList<String> wordList){
 		/*
 		 * wordList 输入的查询语句列表
@@ -175,35 +186,46 @@ public class searchGraph {
 		 * */
 		ArrayList<Object> result = new ArrayList<Object>();
 		String movieName = wordList.get(0);
+		System.out.println("movieName: " + movieName);
 		//通过电影名检索到对应的数据库，注意，默认第一项一定是电影名
-		String dbPath =  "/home/yingying/下载/neo4jMovieGraph/" + movieName;
+		String dbPath =  "/home/yingying/下载/movieDB/" + movieName;
+		System.out.println(dbPath);
 		this.graphDB = new GraphDatabaseFactory().newEmbeddedDatabase(new File(dbPath));
 		try(Transaction tx = this.graphDB.beginTx()){
 			ArrayList<Node> nextNode = findNodeByLabel(Labels.MOVIE);//用来不断地承接结点，直到问句的最后一个结
+//			printNodeList(nextNode);
+//			System.out.println("---------------------------------------");
 			//问句的结尾有两种情况
 			//第一种，以结点结束，只有一种问句“电影名，角色列表
 			if((wordList.size() == 2) && (wordList.get(1).equals("角色列表"))){
 					nextNode = findNodeByLabel(Labels.ROLELIST);
+//					printNodeList(nextNode);
+//					System.out.println("---------------------------------------");
 					result.add(nextNode.get(0).getProperty("roleList"));
 			}
 			else{
 			//第二种，最普遍的一种，以属性结尾
+				System.out.println("end with property");
 				for(int i = 1; i < wordList.size(); i ++){
 				//获取到一个结点，加入链表，注意链表总是不断替换，不会保留之前结点
 					if(this.mapNode.containsKey(wordList.get(i))){
-						//System.out.println(i + " node is a node !");
-						//System.out.println("\n");
+						System.out.println(i + " node is a node !");
 						nextNode = findNodeByLabel(this.mapNode.get(wordList.get(i)));
+//						printNodeList(nextNode);
+//						System.out.println("---------------------------------------");
 					}else{
 						//当跑到一个不表示结点的词的时候
 						//当跑到一个不表示结点的词的时候，情况一说明该词表示属性
 						if(this.mapProperty.containsKey(wordList.get(i))){
-							   // System.out.println(i + " node is a property");
+							    System.out.println(i + " node is a property");
 							    result = getProperty(nextNode, wordList, i);											
 					  }else{
 			         //当跑到一个不表示结点的词的时候，情况二说明其是一个具体确切的角色名称，注意，只考虑询问一个角色名的情况，默认不会询问一个具体公司／编剧／导演的具体信息
-						 ArrayList<Object> list = isRoleName(nextNode, wordList, i);
+						System.out.println(i + " node is a roleName");
+						  ArrayList<Object> list = isRoleName(nextNode, wordList, i);
 						 nextNode = (ArrayList<Node>) list.get(0);
+//						 printNodeList(nextNode);
+//						System.out.println("---------------------------------------");
 						 i = (int) list.get(1);
 						}		
 					}					
@@ -236,19 +258,19 @@ public class searchGraph {
 	
 	public static void main(String[] args) {		
 		searchGraph test = new searchGraph();
-		test.getTheme();
-	/*
-		System.out.println("---------------------电影，角色列表，（角色）角色名，属性--------------------------------------------------------");
+
+	System.out.println("---------------------电影，角色列表，角色，角色名，属性--------------------------------------------------------");
 		ArrayList<String> questionOne = new ArrayList();
 		questionOne.add("但丁密码");
 		questionOne.add("角色列表");
 		questionOne.add("角色");
 		questionOne.add("罗伯特·兰登");
-		questionOne.add("简介");
+		questionOne.add("演员名字");
+
 		ArrayList<Object> resultListOne = test.searchAnswer(questionOne);
 		test.printResult(resultListOne);
 
-		System.out.println("----------------------电影名，角色列表，（角色），　角色名，演员，属性--------------------------------------------------------");		
+		System.out.println("----------------------电影名，角色列表，角色，角色名，演员，属性--------------------------------------------------------");		
 		ArrayList<String> questionFive = new ArrayList();
 		questionFive.add("但丁密码");
 		questionFive.add("角色列表");
@@ -274,21 +296,20 @@ public class searchGraph {
 		test.printResult(resultListThree);
 		
 		System.out.println("---------------------------电影，票房---------------------------------------------------");		
-		ArrayList<String> questionFour= new ArrayList();
-		questionFour.add("但丁密码");
-		questionFour.add("票房");
-		ArrayList<Object> resultListFour = test.searchAnswer(questionFour);
-		test.printResult(resultListFour);
-
-		System.out.println("-----------------------------电影，制作，出品公司，---出品公司代表作品----------------------------------------------");
-		ArrayList<String> question = new ArrayList();
+		ArrayList<String> question= new ArrayList();
 		question.add("但丁密码");
-		question.add("制作");
-		question.add("出品公司");
-		question.add("过去作品");
+		question.add("票房");
 		ArrayList<Object> resultList = test.searchAnswer(question);
 		test.printResult(resultList);
-		*/
-
+	/*	*/
+		System.out.println("-----------------------------电影，制作，出品公司，---出品公司代表作品----------------------------------------------");
+		ArrayList<String> question2 = new ArrayList();
+		question2.add("但丁密码");
+		question2.add("制作");
+		question2.add("出品公司");
+		question2.add("过去作品");
+		ArrayList<Object> resultList2 = test.searchAnswer(question2);
+		test.printResult(resultList2);
+	
 	}
 }
