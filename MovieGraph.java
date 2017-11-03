@@ -1,28 +1,18 @@
-
+package graph;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
 
-import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.Path;
-import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.RelationshipType;
-import org.neo4j.graphdb.ResourceIterator;	
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
-import org.neo4j.graphdb.traversal.Evaluation;
-import org.neo4j.graphdb.traversal.TraversalDescription;
-import org.neo4j.graphdb.traversal.Uniqueness;
 import org.neo4j.io.fs.FileUtils;
+
+//import Graph.MovieGraph.Labels;
+//import Graph.MovieGraph.MyRelationshipTypes;
 
 
 public class MovieGraph {
@@ -48,20 +38,25 @@ public class MovieGraph {
 		System.out.println("dataBasePath:  " +  path);	
 		File file = new File(path);
 		try{
-			init(false, path);
-
+			if(!file.exists()){//如果数据库文件不存在，则直接新建数据库
+			//file.createNewFile();
+				init(false, path);
+			}
+//			else{
+//				init(true, path);//如果数据库已经存在，要删除之前的
+//			}
 		}catch(Exception e){
 			e.printStackTrace();
 		}
 	}
 		
-	public void init(Boolean deletOrNot, String path) throws IOException{
+	public void init(boolean deletOrNot, String path) throws IOException{
 		//创建数据库，并初始化结点，初始化中心结点与一级结点间的关系
 		if(deletOrNot){//如果数据库文件已经存在，则删除以前的
 			FileUtils.deleteRecursively(new File(path));//关闭寄存器
 		}
-		 this.graphDB =new GraphDatabaseFactory().newEmbeddedDatabase(new File(path)); //这里文件的位置应该为数据库所在位置
-		 //registerShutdownHook(this.graphDB); 不能关闭graphDB，否则上一句会报错：graph is null 
+		 this.graphDB =new GraphDatabaseFactory().newEmbeddedDatabase(new File(path));
+		 registerShutdownHook(this.graphDB);
 			try(Transaction tx = this.graphDB.beginTx()){
 				 this.movie = this.graphDB.createNode();
 				 this.manufacture = this.graphDB.createNode();
@@ -105,9 +100,6 @@ public class MovieGraph {
 	//一级结点的创建都用createxxxNode(properties)
 		public  void createMovieNode(String name, String score, String boxOffice, String release_time, String area, 
 			String length, String imgurl, String[] keywords){
-			if(this.graphDB ==null){
-				System.out.println("null error");
-			}
 		try(Transaction tx = graphDB.beginTx()){
 			//诸如电影的名称、票房、时长等这些属性一般不会有空值，因此不判断
 					//this.movie = this.graphDB.createNode();
